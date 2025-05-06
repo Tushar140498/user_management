@@ -2,7 +2,15 @@ import uuid
 import pytest
 from pydantic import ValidationError
 from datetime import datetime
-from app.schemas.user_schemas import UserBase, UserCreate, UserUpdate, UserResponse, UserListResponse, LoginRequest
+from app.schemas.user_schemas import (
+    UserBase,
+    UserCreate,
+    UserUpdate,
+    UserResponse,
+    UserListResponse,
+    LoginRequest,
+    validate_password_complexity
+)
 
 # Fixtures for common test data
 @pytest.fixture
@@ -43,9 +51,6 @@ def user_response_data(user_base_data):
         "last_name": user_base_data["last_name"],
         "role": user_base_data["role"],
         "email": user_base_data["email"],
-        # "last_login_at": datetime.now(),
-        # "created_at": datetime.now(),
-        # "updated_at": datetime.now(),
         "links": []
     }
 
@@ -75,7 +80,6 @@ def test_user_update_valid(user_update_data):
 def test_user_response_valid(user_response_data):
     user = UserResponse(**user_response_data)
     assert user.id == user_response_data["id"]
-    # assert user.last_login_at == user_response_data["last_login_at"]
 
 # Tests for LoginRequest
 def test_login_request_valid(login_request_data):
@@ -108,3 +112,28 @@ def test_user_base_url_invalid(url, user_base_data):
     user_base_data["profile_picture_url"] = url
     with pytest.raises(ValidationError):
         UserBase(**user_base_data)
+
+@pytest.mark.parametrize("password, expected", [
+    ("Valid@123", True),
+    ("Strong$Pass2024", True),
+    ("P@ssw0rd1234", True),
+    ("Comp!ex123", True),
+    ("NoSpecial123", False),
+    ("Short1!", False),
+    ("onlyletters@", False),
+    ("12345678!", False),
+    ("password!", False),
+    ("UPPERCASE123", False),
+    ("lowercase@123", False),
+    ("1234abcd@", False),
+    ("abcd!1234", False),
+    ("uppercase#123", False),
+    ("password", False),
+    ("@!#&", False),
+])
+def test_validate_password_complexity(password, expected):
+    if expected:
+        assert validate_password_complexity(password) == password
+    else:
+        with pytest.raises(ValueError):
+            validate_password_complexity(password)
