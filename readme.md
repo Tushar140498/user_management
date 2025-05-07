@@ -27,7 +27,7 @@
 [Link to my Docker Repo](https://hub.docker.com/r/tushar140498/user_management/tags)
 
 ## Docker Hub Image
-![Docker_Hub_Image](https://github.com/tushar140498/user_management/DOCKER_HUB.png)
+![Docker_Hub_Image](https://github.com/Tushar140498/user_management/blob/main/DOCKER_HUB.png)
 
 
 ---
