@@ -179,14 +179,13 @@ async def list_users(
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(require_role(["ADMIN", "MANAGER"]))
 ):
-    # Validate skip and limit integer parameter values
+     # Validate skip and limit integer parameter values
     if skip < 0 or limit <= 0:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Parameters 'skip' and 'limit' must be non-negative integers. Received skip={skip} and limit={limit}."
         )
-    
-    
+        
     total_users = await UserService.count(db)
     users = await UserService.list_users(db, skip, limit)
 
@@ -260,6 +259,8 @@ async def verify_email(user_id: UUID, token: str, db: AsyncSession = Depends(get
         return {"message": "Email verified successfully"}
     raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid or expired verification token")
 
+
+
 #new feature added of user_profile_update
 @router.put("/users/update-profile", response_model=UserResponse, tags=["User Profile Management"])
 async def update_user_profile(
@@ -274,7 +275,7 @@ async def update_user_profile(
 ):
     """
     Manually update the user's profile information (bio, nickname, first name, last name).
-     
+    
     - **bio**: bio for the user.
     - **nickname**: nickname for the user.
     - **first_name**: first name for the user.
@@ -283,18 +284,18 @@ async def update_user_profile(
     # Get the current user info from the token
     current_user_info = get_current_user(token)
     user_email = current_user_info['user_email']
- 
+
     # Fetch the user from the database
     user = await UserService.get_by_email(db, user_email)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-     
+    
     # Check if the new nickname is already taken (if it's being changed)
     if nickname and nickname != user.nickname:
         existing_user_with_nickname = await UserService.get_by_nickname(db, nickname)
         if existing_user_with_nickname:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Nickname already exists")
- 
+
     # Prepare the fields to update (only include those provided in the request)
     user_data = {}
     if bio:
@@ -305,10 +306,10 @@ async def update_user_profile(
         user_data["first_name"] = first_name
     if last_name:
         user_data["last_name"] = last_name
- 
+
     # Update the user with the provided data
     updated_user = await UserService.update(db, user.id, user_data)
- 
+
     # Return the updated user profile info along with HATEOAS links
     return UserResponse(
         bio=updated_user.bio,
@@ -316,37 +317,37 @@ async def update_user_profile(
         last_name=updated_user.last_name,
         nickname=updated_user.nickname,
     )
- 
- 
- 
- #new feautre added of user_is_professional
+
+
+
+#new feautre added of user_is_professional
 @router.patch("/users/professional/{nickname}", response_model=UserResponse, tags=["User Management Requires (Admin Roles)"])
 async def update_is_professional(
     nickname: str,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(require_role(["ADMIN"]))  # Only Admin can access this
 ):
-     """
+    """
     Update the user's is_professional status to True based on their nickname.
- 
+
     Args:
         nickname: The nickname of the user.
         db: Dependency to get the database session.
         current_user: Dependency to check the current user's role (only admin can perform this).
- 
+
     Returns:
         UserResponse: The updated user information.
-     """
+    """
     # Fetch the user by nickname
     user = await UserService.get_by_nickname(db, nickname)
-     
+    
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-     
+    
     # Update the user's is_professional field to True
     user.is_professional = True
     updated_user = await UserService.update(db, user.id, {"is_professional": True})
-     
+    
     return UserResponse(
         id=updated_user.id,
         is_professional=updated_user.is_professional,
